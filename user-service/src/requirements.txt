@@ -1,0 +1,7 @@
+Flask==2.3.3
+boto3==1.28.62
+aws-wsgi==0.2.1
+python-jose==3.3.0
+passlib==1.7.4
+requests==2.31.0
+uuid
