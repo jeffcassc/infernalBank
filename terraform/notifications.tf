@@ -29,3 +29,35 @@ resource "aws_lambda_event_source_mapping" "notification_trigger" {
   function_name    = aws_lambda_function.notification_lambda.arn
   batch_size       = 1
 }
+
+# Lambda para manejar errores de notificaciones
+resource "aws_lambda_function" "notification_error_lambda" {
+  filename      = "../notification-service/deploy.zip"
+  function_name = "${var.project_name}-${var.environment}-notification-error"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "app.handle_notification_error"
+  runtime       = "python3.9"
+
+  environment {
+    variables = {
+      NOTIFICATION_ERRORS_TABLE = aws_dynamodb_table.notification_errors_table.name
+    }
+  }
+}
+
+# Trigger para errores de notificaciones
+resource "aws_lambda_event_source_mapping" "notification_error_trigger" {
+  event_source_arn = aws_sqs_queue.notification_error_queue.arn
+  function_name    = aws_lambda_function.notification_error_lambda.arn
+  batch_size       = 1
+}
+
+# Bucket para reportes de transacciones
+resource "aws_s3_bucket" "transactions_reports_bucket" {
+  bucket = "${var.project_name}-${var.environment}-reports"
+  
+  tags = {
+    Environment = var.environment
+  }
+}
+

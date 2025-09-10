@@ -72,3 +72,49 @@ resource "aws_iam_role_policy_attachment" "sqs_policy_attachment" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.sqs_policy.arn
 }
+
+# SQS para notificaciones de errores de tarjetas
+resource "aws_sqs_queue" "card_error_queue" {
+  name                      = "${var.project_name}-${var.environment}-card-error-queue"
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 86400
+  receive_wait_time_seconds = 10
+  
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.card_error_dlq.arn
+    maxReceiveCount     = 3
+  })
+
+  tags = {
+    Environment = var.environment
+  }
+}
+
+# DLQ para errores de tarjetas
+resource "aws_sqs_queue" "card_error_dlq" {
+  name = "${var.project_name}-${var.environment}-card-error-dlq"
+}
+
+# SQS para notificaciones de errores
+resource "aws_sqs_queue" "notification_error_queue" {
+  name                      = "${var.project_name}-${var.environment}-notification-error-queue"
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 86400
+  receive_wait_time_seconds = 10
+  
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.notification_error_dlq.arn
+    maxReceiveCount     = 3
+  })
+
+  tags = {
+    Environment = var.environment
+  }
+}
+
+# DLQ para errores de notificaciones
+resource "aws_sqs_queue" "notification_error_dlq" {
+  name = "${var.project_name}-${var.environment}-notification-error-dlq"
+}
